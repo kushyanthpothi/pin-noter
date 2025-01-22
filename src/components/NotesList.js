@@ -12,6 +12,30 @@ const NotesList = ({ deleteNote, onEditNote, onPinNote, searchQuery }) => {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (!user) {
+        const loadCachedNotes = () => {
+          try {
+            const cachedNotes = JSON.parse(localStorage.getItem('cachedNotes') || '[]');
+            setNotes(cachedNotes);
+            setLoading(false);
+          } catch (error) {
+            console.error('Error loading cached notes:', error);
+            setNotes([]);
+            setLoading(false);
+          }
+        };
+  
+        // Initial load
+        loadCachedNotes();
+  
+        // Listen for updates
+        const handleNotesUpdate = (event) => {
+          setNotes(event.detail);
+        };
+  
+        window.addEventListener('notesUpdated', handleNotesUpdate);
+        return () => window.removeEventListener('notesUpdated', handleNotesUpdate);
+      }
       if (user) {
         // User is logged in - fetch from Firebase
         const notesRef = ref(database, `users/${user.uid}/notes`);
@@ -22,10 +46,14 @@ const NotesList = ({ deleteNote, onEditNote, onPinNote, searchQuery }) => {
               ...note,
               id
             }));
+            
+            // Sort notes by timestamp to maintain order
+            notesList.sort((a, b) => b.timestamp - a.timestamp);
+            
             setNotes(notesList);
-            // Update cache with latest notes
-            localStorage.setItem('cachedNotes', JSON.stringify(notesList));
-            localStorage.setItem('lastSyncTime', getCurrentUTCTimestamp());
+            
+            // Update cache with the latest data from Firebase
+            localStorage.setItem('cachedNotes', JSON.stringify([])); // Clear old cache
           } else {
             setNotes([]);
             localStorage.setItem('cachedNotes', JSON.stringify([]));
@@ -34,22 +62,37 @@ const NotesList = ({ deleteNote, onEditNote, onPinNote, searchQuery }) => {
         }, (error) => {
           console.error('Error fetching notes:', error);
           toast.error('Failed to fetch notes');
-          // On error, try to load from cache
           loadFromCache();
         });
       } else {
         // User is not logged in - load from cache
         loadFromCache();
+        
+        // Set up localStorage event listener for offline mode
+        const handleStorageChange = () => {
+          const cachedNotes = JSON.parse(localStorage.getItem('cachedNotes') || '[]');
+          setNotes(cachedNotes);
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('notesUpdated', (event) => {
+          setNotes(event.detail);
+        });
+        
+        return () => {
+          window.removeEventListener('storage', handleStorageChange);
+          window.removeEventListener('notesUpdated', handleStorageChange);
+        };
       }
     });
-
+  
     return () => unsubscribe();
   }, []);
 
-  const getCurrentUTCTimestamp = () => {
-    const now = new Date();
-    return now.toISOString();
-  };
+  // const getCurrentUTCTimestamp = () => {
+  //   const now = new Date();
+  //   return now.toISOString();
+  // };
 
   const loadFromCache = () => {
     try {

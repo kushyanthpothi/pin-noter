@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/CreateNote.css';
 import { auth, database } from '../firebase/firebase';
-import { ref, set, push,get } from 'firebase/database';
+import { ref, set, push, get } from 'firebase/database';
 import { toast } from 'react-hot-toast';
 
 
@@ -56,49 +56,61 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
     }
   };
 
+  
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user && cachedNotes.length > 0) {
-        // Upload cached notes to Firebase
-        try {
-          const notesRef = ref(database, `users/${user.uid}/notes`);
-          const snapshot = await get(notesRef);
-          const existingNotes = snapshot.val() || {};
-  
-          // Filter out notes that already exist in Firebase
-          const newCachedNotes = cachedNotes.filter(note => 
-            !Object.values(existingNotes).some(fbNote => 
-              fbNote.timestamp === note.timestamp
-            )
-          );
-  
-          // Upload new cached notes
-          for (const note of newCachedNotes) {
-            const newNoteRef = push(notesRef);
-            await set(newNoteRef, {
-              ...note,
-              id: newNoteRef.key,
-              userId: user.uid,
-              userEmail: user.email,
-              author: user.displayName || user.email
-            });
+      if (user) {
+        // Load cached notes from localStorage
+        const cachedNotesString = localStorage.getItem('cachedNotes');
+        if (cachedNotesString) {
+          try {
+            const cachedNotes = JSON.parse(cachedNotesString);
+            if (cachedNotes.length > 0) {
+              // Upload cached notes to Firebase
+              const notesRef = ref(database, `users/${user.uid}/notes`);
+              const snapshot = await get(notesRef);
+              const existingNotes = snapshot.val() || {};
+
+              for (const note of cachedNotes) {
+                // Check if note already exists in Firebase (using timestamp as unique identifier)
+                const noteExists = Object.values(existingNotes).some(
+                  fbNote => fbNote.timestamp === note.timestamp
+                );
+
+                if (!noteExists) {
+                  // Add user info to the note
+                  const enrichedNote = {
+                    ...note,
+                    userId: user.uid,
+                    userEmail: user.email,
+                    author: user.displayName || user.email,
+                    syncedFromCache: true
+                  };
+
+                  // Create new note reference and save
+                  const newNoteRef = push(notesRef);
+                  await set(newNoteRef, {
+                    ...enrichedNote,
+                    id: newNoteRef.key
+                  });
+                }
+              }
+
+              // Clear cached notes after successful sync
+              localStorage.setItem('cachedNotes', JSON.stringify([]));
+              toast.success('Local notes synced to your account');
+            }
+          } catch (error) {
+            console.error('Error syncing cached notes:', error);
+            toast.error('Failed to sync local notes');
           }
-  
-          if (newCachedNotes.length > 0) {
-            toast.success('Local notes synced to your account');
-            // Clear cached notes after successful sync
-            localStorage.setItem('cachedNotes', JSON.stringify([]));
-            setCachedNotes([]);
-          }
-        } catch (error) {
-          console.error('Error syncing cached notes:', error);
-          toast.error('Failed to sync local notes');
         }
       }
     });
-  
+
     return () => unsubscribe();
-  }, [cachedNotes]);
+  }, []); // Empty dependency array since we only want this to run once on mount
 
   const [charCount, setCharCount] = useState(0);
 
@@ -128,70 +140,6 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
     }
   }, [editingNote]);
 
-  // const handleCodeFormatting = (e) => {
-  //   const textarea = e.target;
-  //   const start = textarea.selectionStart;
-  //   const end = textarea.selectionEnd;
-  //   const content = note.content;
-
-  //   // Check if we're inside a code block
-  //   const beforeCursor = content.substring(0, start);
-  //   const afterCursor = content.substring(end);
-  //   const codeBlockStart = beforeCursor.lastIndexOf('```');
-  //   const codeBlockEnd = afterCursor.indexOf('```');
-
-  //   if (codeBlockStart !== -1 && codeBlockEnd !== -1) {
-  //     // We're inside a code block
-  //     if (e.key === 'Enter') {
-  //       e.preventDefault();
-  //       // Add newline with proper indentation
-  //       const lines = beforeCursor.split('\n');
-  //       const currentLine = lines[lines.length - 1];
-  //       const indentation = currentLine.match(/^\s*/)[0];
-
-  //       const newContent = beforeCursor + '\n' + indentation + afterCursor;
-  //       setNote({ ...note, content: newContent });
-
-  //       // Set cursor position after indentation
-  //       setTimeout(() => {
-  //         const newPosition = start + 1 + indentation.length;
-  //         textarea.setSelectionRange(newPosition, newPosition);
-  //       }, 0);
-  //     }
-  //   }
-  // };
-
-
-
-  // const isNumberedListInSequence = (lines, startIndex) => {
-  //   let expectedNumber = 1;
-  //   let currentIndex = startIndex;
-
-  //   // Go backwards to find the start of the list
-  //   while (currentIndex >= 0) {
-  //     const match = lines[currentIndex].match(/^(\d+)\./);
-  //     if (!match) break;
-  //     expectedNumber = parseInt(match[1], 10);
-  //     currentIndex--;
-  //   }
-
-  //   // Go forwards to check sequence
-  //   currentIndex = startIndex;
-  //   while (currentIndex < lines.length) {
-  //     const match = lines[currentIndex].match(/^(\d+)\./);
-  //     if (!match) break;
-
-  //     const currentNumber = parseInt(match[1], 10);
-  //     if (currentNumber !== expectedNumber) {
-  //       return false;
-  //     }
-  //     expectedNumber++;
-  //     currentIndex++;
-  //   }
-
-  //   return true;
-  // };
-
   const updateListState = (content) => {
     const lines = content.split('\n');
     const hasBulletPoint = lines.some(line => line.trim().startsWith('• '));
@@ -214,61 +162,82 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
     }
   };
 
-  // const handlePaste = (e) => {
-  //   e.preventDefault();
-  //   const clipboard = e.clipboardData || window.clipboardData;
-  //   const pastedData = clipboard.getData('text');
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const clipboard = e.clipboardData;
+    const pastedData = clipboard.getData('text/html') || clipboard.getData('text/plain');
+    const textarea = e.target;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
 
-  //   // Parse the pasted content for formatting
-  //   const formattedContent = parseFormattedContent(pastedData);
+    // Parse HTML content
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(pastedData, 'text/html');
 
-  //   const start = e.target.selectionStart;
-  //   const end = e.target.selectionEnd;
-  //   const currentContent = note.content;
+    const processNode = (node, prefix = '') => {
+      let result = '';
+      
+      if (node.nodeType === Node.TEXT_NODE) {
+        return prefix + node.textContent;
+      }
 
-  //   // Insert formatted content at cursor position
-  //   const newContent =
-  //     currentContent.substring(0, start) +
-  //     formattedContent +
-  //     currentContent.substring(end);
+      const children = Array.from(node.childNodes);
+      
+      switch (node.nodeName.toLowerCase()) {
+        case 'ul':
+          children.forEach(child => {
+            if (child.nodeName.toLowerCase() === 'li') {
+              result += processNode(child, '• ');
+            }
+          });
+          break;
+        case 'ol':
+          let counter = 1;
+          children.forEach(child => {
+            if (child.nodeName.toLowerCase() === 'li') {
+              result += processNode(child, `${counter}. `);
+              counter++;
+            }
+          });
+          break;
+        case 'li':
+          result = prefix + children.map(child => processNode(child)).join('') + '\n';
+          break;
+        case 'b':
+        case 'strong':
+          result = `**${children.map(child => processNode(child)).join('')}**`;
+          break;
+        case 'u':
+          result = `__${children.map(child => processNode(child)).join('')}__`;
+          break;
+        case 's':
+        case 'strike':
+          result = `~~${children.map(child => processNode(child)).join('')}~~`;
+          break;
+        case 'p':
+          result = children.map(child => processNode(child)).join('') + '\n';
+          break;
+        default:
+          result = children.map(child => processNode(child)).join('');
+      }
+      
+      return result;
+    };
 
-  //   setNote({ ...note, content: newContent });
+    let processedContent = processNode(doc.body).trim();
+    
+    // If no HTML formatting was detected, use plain text
+    if (!processedContent || processedContent === doc.body.textContent.trim()) {
+      processedContent = clipboard.getData('text/plain');
+    }
 
-  //   // Update cursor position
-  //   setTimeout(() => {
-  //     const newPosition = start + formattedContent.length;
-  //     e.target.setSelectionRange(newPosition, newPosition);
-  //   }, 0);
-  // };
+    const newContent = 
+      note.content.substring(0, start) + 
+      processedContent + 
+      note.content.substring(end);
 
-  // const parseFormattedContent = (content) => {
-  //   // Parse HTML formatting
-  //   const tempDiv = document.createElement('div');
-  //   tempDiv.innerHTML = content;
-
-  //   let result = tempDiv.innerText;
-
-  //   // Convert HTML formatting to markdown
-  //   if (tempDiv.querySelector('strong, b')) result = result.replace(/<(strong|b)>(.*?)<\/\1>/g, '**$2**');
-  //   if (tempDiv.querySelector('u')) result = result.replace(/<u>(.*?)<\/u>/g, '__$1__');
-  //   if (tempDiv.querySelector('strike, s')) result = result.replace(/<(strike|s)>(.*?)<\/\1>/g, '~~$2~~');
-  //   if (tempDiv.querySelector('code')) result = result.replace(/<code>(.*?)<\/code>/g, '```\n$1\n```');
-
-  //   // Convert lists
-  //   if (tempDiv.querySelector('ul')) {
-  //     result = result.replace(/<ul>(.*?)<\/ul>/g, (match, content) => {
-  //       return content.replace(/<li>(.*?)<\/li>/g, '• $1\n');
-  //     });
-  //   }
-  //   if (tempDiv.querySelector('ol')) {
-  //     let counter = 1;
-  //     result = result.replace(/<ol>(.*?)<\/ol>/g, (match, content) => {
-  //       return content.replace(/<li>(.*?)<\/li>/g, () => `${counter++}. $1\n`);
-  //     });
-  //   }
-
-  //   return result;
-  // };
+    setNote({ ...note, content: newContent });
+  };
 
   const checkUnderlinePosition = (content, cursorPosition) => {
     const segments = content.split(/(__.*?__)/g);
@@ -334,12 +303,12 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     if (note.title.trim() || note.content.trim()) {
       const currentTime = new Date();
       const formattedTime = formatDateTime(currentTime);
       const { markdownContent } = processContent(note.content);
-  
+
       const noteData = {
         title: note.title.trim(),
         content: markdownContent,
@@ -349,58 +318,38 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
         lastModified: formattedTime,
         id: editingNote ? editingNote.id : Date.now().toString()
       };
-  
+
       try {
         if (auth.currentUser) {
-          // User is logged in - save to Firebase
+          // Add user-specific data for Firebase
           noteData.userId = auth.currentUser.uid;
           noteData.userEmail = auth.currentUser.email;
           noteData.author = auth.currentUser.displayName || auth.currentUser.email;
-  
-          if (editingNote) {
-            // Update existing note
-            await set(ref(database, `users/${auth.currentUser.uid}/notes/${editingNote.id}`), noteData);
-            
-            if (onSave) {
-              onSave(noteData);
-            }
-            
-            toast.success('Note updated successfully!');
-          } else {
-            // Create new note
-            const newNoteRef = push(ref(database, `users/${auth.currentUser.uid}/notes`));
-            const newNoteData = { ...noteData, id: newNoteRef.key };
-            await set(newNoteRef, newNoteData);
-            
-            addNote(newNoteData);
-            toast.success('Note saved successfully!');
-          }
+
+          // Save to Firebase
+          const notesRef = ref(database, `users/${auth.currentUser.uid}/notes`);
+          const newNoteRef = push(notesRef);
+          await set(newNoteRef, {
+            ...noteData,
+            id: newNoteRef.key // Use Firebase-generated key
+          });
+
+          addNote({ ...noteData, id: newNoteRef.key });
+          toast.success('Note saved successfully');
         } else {
-          // User is not logged in - save to local storage
-          if (editingNote) {
-            // Update existing note in cache
-            const updatedCachedNotes = cachedNotes.map(n => 
-              n.id === editingNote.id ? noteData : n
-            );
-            localStorage.setItem('cachedNotes', JSON.stringify(updatedCachedNotes));
-            setCachedNotes(updatedCachedNotes);
-            
-            if (onSave) {
-              onSave(noteData);
-            }
-            
-            toast.success('Note updated in local storage');
-          } else {
-            // Add new note to cache
-            const updatedCachedNotes = [noteData, ...cachedNotes];
-            localStorage.setItem('cachedNotes', JSON.stringify(updatedCachedNotes));
-            setCachedNotes(updatedCachedNotes);
-            
-            addNote(noteData);
-            toast.success('Note saved to local storage');
-          }
+          // Existing local storage logic
+          const existingNotes = JSON.parse(localStorage.getItem('cachedNotes') || '[]');
+          const updatedNotes = [noteData, ...existingNotes];
+          localStorage.setItem('cachedNotes', JSON.stringify(updatedNotes));
+          addNote(noteData);
+
+          window.dispatchEvent(new CustomEvent('notesUpdated', {
+            detail: updatedNotes
+          }));
+
+          toast.success('Note saved to local storage');
         }
-  
+
         // Clear form after submission
         setNote({ title: '', content: '' });
         setIsExpanded(false);
@@ -408,8 +357,8 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
         setNumberCounter(1);
       } catch (error) {
         console.error('Error saving note:', error);
-        toast.error(auth.currentUser 
-          ? 'Failed to save note. Please try again.' 
+        toast.error(auth.currentUser
+          ? 'Failed to save note. Please try again.'
           : 'Failed to save note to local storage.'
         );
       }
@@ -432,12 +381,8 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
     const textarea = document.querySelector('.note-textarea');
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    
-    // Get the full content and selected text
     const fullContent = note.content;
-    // const selectedText = fullContent.substring(start, end);
     
-    // Find the start of the first line and end of the last line of selection
     let lineStart = start;
     while (lineStart > 0 && fullContent[lineStart - 1] !== '\n') {
       lineStart--;
@@ -448,10 +393,7 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
       lineEnd++;
     }
     
-    // Get all lines in selection
     const selectedLines = fullContent.substring(lineStart, lineEnd).split('\n');
-    
-    // Track if we're removing or adding list markers
     const isRemoving = selectedLines.every(line => {
       if (type === 'bullet') {
         return line.trim().startsWith('• ');
@@ -459,51 +401,45 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
         return /^\d+\.\s/.test(line.trim());
       }
     });
-    
-    // Process each line
+  
     let counter = 1;
     const processedLines = selectedLines.map(line => {
       const trimmedLine = line.trim();
-      const indent = line.match(/^\s*/)[0];
+      const indent = '   '; // Three spaces for indentation
       
-      // Remove existing list markers if present
+      // Remove existing list markers
       let cleanLine = trimmedLine
-        .replace(/^• /, '')
-        .replace(/^\d+\.\s/, '');
-        
+        .replace(/^•\s+/, '')
+        .replace(/^\d+\.\s+/, '');
+      
       if (isRemoving) {
-        return indent + cleanLine;
+        return cleanLine;
       } else {
         if (type === 'bullet') {
-          return indent + '• ' + cleanLine;
+          return `${indent}• ${cleanLine}`;
         } else {
-          return indent + `${counter++}. ` + cleanLine;
+          return `${indent}${counter++}. ${cleanLine}`;
         }
       }
     });
-    
-    // Combine everything back together
-    const newContent = 
+  
+    const newContent =
       fullContent.substring(0, lineStart) +
       processedLines.join('\n') +
       fullContent.substring(lineEnd);
-    
+  
     setNote({ ...note, content: newContent });
     
-    // Update list state
     if (!isRemoving) {
       setListType(type);
       if (type === 'number') {
-        setNumberCounter(counter);
+        setNumberCounter(2); // Set to 2 as the next number to be used
       }
     } else {
       setListType(null);
-      if (type === 'number') {
-        setNumberCounter(1);
-      }
+      setNumberCounter(1);
     }
-    
-    // Restore selection
+  
     setTimeout(() => {
       textarea.focus();
       const newStart = lineStart;
@@ -512,182 +448,80 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
     }, 0);
   };
 
-
   const handleKeyDown = (e) => {
-    if (e.key === 'Tab') {
+    if (e.key === 'Enter') {
       e.preventDefault();
-      const start = e.target.selectionStart;
-      const end = e.target.selectionEnd;
+      const textarea = e.target;
+      const cursorPos = textarea.selectionStart;
+      const content = note.content;
+      const lines = content.split('\n');
+      let currentLineStart = cursorPos;
       
-      // Handle multi-line indentation
-      if (start !== end) {
-        const selectedText = note.content.substring(start, end);
-        const lines = selectedText.split('\n');
-        const indentedLines = lines.map(line => '    ' + line);
-        const newContent = 
-          note.content.substring(0, start) +
-          indentedLines.join('\n') +
-          note.content.substring(end);
-        
-        setNote({ ...note, content: newContent });
-        
-        // Update selection
-        setTimeout(() => {
-          e.target.selectionStart = start;
-          e.target.selectionEnd = start + indentedLines.join('\n').length;
-        }, 0);
-      } else {
-        // Single line indentation (existing code)
-        const newContent = 
-          note.content.substring(0, start) +
-          '    ' +
-          note.content.substring(end);
-        setNote({ ...note, content: newContent });
-        setTimeout(() => {
-          e.target.selectionStart = e.target.selectionEnd = start + 4;
-        }, 0);
+      // Find start of current line
+      while (currentLineStart > 0 && content[currentLineStart - 1] !== '\n') {
+        currentLineStart--;
       }
-    } else if (e.key === 'Enter') {
-      const cursorPos = e.target.selectionStart;
-      const lines = note.content.split('\n');
-      let currentPos = 0;
-      let currentLineIndex = 0;
-
-      // Find current line
-      for (let i = 0; i < lines.length; i++) {
-        if (cursorPos >= currentPos && cursorPos <= currentPos + lines[i].length) {
-          currentLineIndex = i;
-          break;
-        }
-        currentPos += lines[i].length + 1;
-      }
-
-      const currentLine = lines[currentLineIndex];
-      const hasBullet = currentLine.trim().startsWith('• ');
-      const hasNumber = /^\d+\.\s/.test(currentLine.trim());
-
-      if (hasBullet || hasNumber) {
-        e.preventDefault();
-        const content = hasBullet
-          ? currentLine.replace(/^(\s*)?• /, '')
-          : currentLine.replace(/^(\s*)?\d+\.\s/, '');
-        const indent = currentLine.match(/^(\s*)/)[0];
-
-        if (!content.trim()) {
-          // Empty list item - remove marker
-          lines[currentLineIndex] = '';
+      
+      const currentLine = content.substring(currentLineStart, cursorPos);
+      const bulletMatch = currentLine.match(/^(\s*)?•\s+(.*)/);
+      const numberMatch = currentLine.match(/^(\s*)?(\d+)\.\s+(.*)/);
+      
+      if (bulletMatch || numberMatch) {
+        const indent = '   '; // Three spaces
+        const currentContent = bulletMatch ? 
+          bulletMatch[2] : 
+          numberMatch[3];
+        
+        if (!currentContent.trim()) {
+          // Empty list item - remove the list marker
+          const newContent = 
+            content.substring(0, currentLineStart) +
+            content.substring(cursorPos);
+          setNote({ ...note, content: newContent });
           setListType(null);
+          setNumberCounter(1);
         } else {
           // Continue list with new item
-          if (hasBullet) {
-            lines.splice(currentLineIndex + 1, 0, `${indent}• `);
+          let newLine;
+          if (bulletMatch) {
+            newLine = `\n${indent}• `;
           } else {
-            const currentNumber = parseInt(currentLine.match(/^(\d+)\./)[1], 10);
-            lines.splice(currentLineIndex + 1, 0, `${indent}${currentNumber + 1}. `);
+            const currentNumber = parseInt(numberMatch[2], 10);
+            newLine = `\n${indent}${currentNumber + 1}. `;
             setNumberCounter(currentNumber + 2);
           }
+          
+          const newContent =
+            content.substring(0, cursorPos) +
+            newLine +
+            content.substring(cursorPos);
+          
+          setNote({ ...note, content: newContent });
+          
+          // Set cursor position after the new list marker
+          setTimeout(() => {
+            const newPos = cursorPos + newLine.length;
+            textarea.setSelectionRange(newPos, newPos);
+          }, 0);
         }
-
-        const newContent = lines.join('\n');
+      } else {
+        // If not in a list, just add a normal newline
+        const newContent = 
+          content.substring(0, cursorPos) +
+          '\n' +
+          content.substring(cursorPos);
+        
         setNote({ ...note, content: newContent });
-
+        
         setTimeout(() => {
-          const newPos = currentPos + currentLine.length + 1 + indent.length +
-            (hasBullet ? 2 : String(numberCounter).length + 2);
-          e.target.selectionStart = e.target.selectionEnd = newPos;
+          const newPos = cursorPos + 1;
+          textarea.setSelectionRange(newPos, newPos);
         }, 0);
       }
+    } else if (e.key === 'Tab') {
+      // ... existing tab handling code ...
     }
   };
-
-
-  // const handleCursorMove = (e) => {
-  //   const textarea = e.target;
-  //   const cursorPos = textarea.selectionStart;
-  //   checkCurrentFormatting(cursorPos);
-  //   checkCurrentFormatting(e.target.selectionStart);
-  // };
-
-  // const toggleBulletList = () => {
-  //   const textarea = document.querySelector('.note-textarea');
-  //   const start = textarea.selectionStart;
-  //   const lines = note.content.split('\n');
-  //   let currentPos = 0;
-  //   let currentLineIndex = 0;
-
-  //   // Find current line
-  //   for (let i = 0; i < lines.length; i++) {
-  //     if (start >= currentPos && start <= currentPos + lines[i].length) {
-  //       currentLineIndex = i;
-  //       break;
-  //     }
-  //     currentPos += lines[i].length + 1;
-  //   }
-
-  //   const currentLine = lines[currentLineIndex];
-  //   const hasBullet = currentLine.trim().startsWith('• ');
-
-  //   if (hasBullet) {
-  //     // Remove bullet
-  //     lines[currentLineIndex] = currentLine.replace(/^(\s*)?• /, '$1');
-  //     setListType(null);
-  //   } else {
-  //     // Add bullet
-  //     const indent = currentLine.match(/^(\s*)/)[0];
-  //     lines[currentLineIndex] = `${indent}• ${currentLine.trim()}`;
-  //     setListType('bullet');
-  //   }
-
-  //   const newContent = lines.join('\n');
-  //   setNote({ ...note, content: newContent });
-  // };
-
-  // const toggleNumberList = () => {
-  //   const textarea = document.querySelector('.note-textarea');
-  //   const start = textarea.selectionStart;
-  //   const lines = note.content.split('\n');
-  //   let currentPos = 0;
-  //   let currentLineIndex = 0;
-
-  //   // Find current line
-  //   for (let i = 0; i < lines.length; i++) {
-  //     if (start >= currentPos && start <= currentPos + lines[i].length) {
-  //       currentLineIndex = i;
-  //       break;
-  //     }
-  //     currentPos += lines[i].length + 1;
-  //   }
-
-  //   const currentLine = lines[currentLineIndex];
-  //   const hasNumber = /^\s*\d+\.\s/.test(currentLine);
-
-  //   if (hasNumber) {
-  //     // Remove number
-  //     lines[currentLineIndex] = currentLine.replace(/^(\s*)?\d+\.\s/, '$1');
-  //     setListType(null);
-  //     setNumberCounter(1);
-  //   } else {
-  //     // Add number
-  //     const indent = currentLine.match(/^(\s*)/)[0];
-
-  //     // Find the number to use
-  //     let lastNumber = 0;
-  //     for (let i = currentLineIndex - 1; i >= 0; i--) {
-  //       const numberMatch = lines[i].match(/^(\s*)?(\d+)\.\s/);
-  //       if (numberMatch) {
-  //         lastNumber = parseInt(numberMatch[2], 10);
-  //         break;
-  //       }
-  //     }
-
-  //     lines[currentLineIndex] = `${indent}${lastNumber + 1}. ${currentLine.trim()}`;
-  //     setListType('number');
-  //     setNumberCounter(lastNumber + 2);
-  //   }
-
-  //   const newContent = lines.join('\n');
-  //   setNote({ ...note, content: newContent });
-  // };
 
 
   const checkCurrentFormatting = (position) => {
@@ -695,10 +529,10 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
     const currentPos = position ?? textarea.selectionStart;
     const content = note.content;
     const lines = content.split('\n');
-
+  
     let charCount = 0;
     let currentLine = '';
-
+  
     // Find the current line
     for (const line of lines) {
       if (currentPos >= charCount && currentPos <= charCount + line.length) {
@@ -707,15 +541,16 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
       }
       charCount += line.length + 1;
     }
-
+  
     // Update list type based on current line
     const detectedListType = detectListType(currentLine);
     if (detectedListType !== listType) {
       setListType(detectedListType);
       if (detectedListType === 'number') {
-        const match = currentLine.match(/^(\d+)\./);
+        const match = currentLine.match(/^(\s*)?(\d+)\./);
         if (match) {
-          setNumberCounter(parseInt(match[1], 10) + 1);
+          const currentNumber = parseInt(match[2], 10);
+          setNumberCounter(currentNumber + 1);
         }
       }
     }
@@ -729,69 +564,56 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
     let newText = note.content;
 
     if (format === 'code') {
-      // Handle code formatting
       const codeMarker = '```';
       newText = note.content.substring(0, start) +
         `${codeMarker}\n${selectedText}\n${codeMarker}` +
         note.content.substring(end);
 
-      // Set cursor position
       setTimeout(() => {
         textarea.focus();
-        const newCursorPos = start + codeMarker.length + 1; // +1 for newline
+        const newCursorPos = start + codeMarker.length + 1;
         textarea.setSelectionRange(newCursorPos, newCursorPos);
       }, 0);
-    }
-
-    else if (format === 'bold' || format === 'underline' || format === 'strikethrough') {
-      // Escape special characters for regex
+    } else if (format === 'bold' || format === 'underline' || format === 'strikethrough') {
       const marker = format === 'bold' ? '\\*\\*' :
-        format === 'underline' ? '__' :
-          '~~';
+        format === 'underline' ? '__' : '~~';
       const segments = note.content.split(new RegExp(`(${marker}.*?${marker})`, 'g'));
       let position = 0;
       let isInFormattedSection = false;
 
-      // Find if cursor is within a formatted section
       for (let segment of segments) {
-        if ((format === 'bold' && segment.startsWith('**') && segment.endsWith('**')) ||
+        const isFormatted = (format === 'bold' && segment.startsWith('**') && segment.endsWith('**')) ||
           (format === 'underline' && segment.startsWith('__') && segment.endsWith('__')) ||
-          (format === 'strikethrough' && segment.startsWith('~~') && segment.endsWith('~~'))) {
-          if (start >= position + 2 && start <= position + segment.length - 2) {
-            isInFormattedSection = true;
-            break;
-          }
+          (format === 'strikethrough' && segment.startsWith('~~') && segment.endsWith('~~'));
+
+        if (isFormatted && start >= position + 2 && start <= position + segment.length - 2) {
+          isInFormattedSection = true;
+          break;
         }
         position += segment.length;
       }
 
       if (isInFormattedSection) {
-        // Remove formatting only from selected text
-        const beforeCursor = note.content.substring(0, start - 2);
-        const afterCursor = note.content.substring(end + 2);
-        newText = beforeCursor + selectedText + afterCursor;
+        newText = note.content.substring(0, start - 2) + selectedText + note.content.substring(end + 2);
         if (format === 'bold') setIsBoldActive(false);
         else if (format === 'underline') setIsUnderlineActive(false);
         else setIsStrikethroughActive(false);
 
-        // Set cursor position
         setTimeout(() => {
           textarea.focus();
           textarea.setSelectionRange(start - 2, start - 2);
         }, 0);
       } else {
-        // Add formatting to selected text
         const formatMarker = format === 'bold' ? '**' :
-          format === 'underline' ? '__' :
-            '~~';
+          format === 'underline' ? '__' : '~~';
         newText = note.content.substring(0, start) +
           `${formatMarker}${selectedText}${formatMarker}` +
           note.content.substring(end);
+        
         if (format === 'bold') setIsBoldActive(true);
         else if (format === 'underline') setIsUnderlineActive(true);
         else setIsStrikethroughActive(true);
 
-        // Set cursor position
         setTimeout(() => {
           textarea.focus();
           const newCursorPos = start + 2;
@@ -802,6 +624,46 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
 
     setNote({ ...note, content: newText });
   };
+
+  useEffect(() => {
+    const handleKeyboardShortcuts = (e) => {
+      // Only handle shortcuts when editor is focused
+      const isEditorFocused = document.activeElement.classList.contains('note-textarea');
+      if (!isEditorFocused) return;
+
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case 'b':
+            e.preventDefault();
+            insertFormatting('bold');
+            break;
+          case 'u':
+            e.preventDefault();
+            insertFormatting('underline');
+            break;
+          case 'l':
+            e.preventDefault();
+            insertFormatting('strikethrough');
+            break;
+          case 'p':
+            e.preventDefault();
+            toggleListType('bullet');
+            break;
+          case 'n':
+            e.preventDefault();
+            toggleListType('number');
+            break;
+          case 's':
+            e.preventDefault();
+            handleSubmit(new Event('submit'));
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboardShortcuts);
+    return () => window.removeEventListener('keydown', handleKeyboardShortcuts);
+  }, [note, insertFormatting, toggleListType, handleSubmit]);
 
   const handleContentChange = (e) => {
     const newContent = e.target.value;
@@ -881,7 +743,7 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
   // };
 
   return (
-    <div 
+    <div
       className={`create-note ${isExpanded || editingNote ? 'expanded' : ''} 
                  ${isAnimating ? 'animating' : ''}`}
     >
@@ -889,31 +751,32 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
         <div className="note-header">
           {(isExpanded || editingNote) && (
             <input
-            type="text"
-            placeholder="Title"
-            value={note.title}
-            onChange={(e) => setNote({ ...note, title: e.target.value })}
-            className="note-title"
-            autoFocus
-          />
+              type="text"
+              placeholder="Title"
+              value={note.title}
+              onChange={(e) => setNote({ ...note, title: e.target.value })}
+              className="note-title"
+              autoFocus
+            />
           )}
         </div>
 
         <div className="note-content" onClick={handleExpand}>
-          <textarea
+        <textarea
             placeholder="Take a note..."
             value={note.content}
             onChange={handleContentChange}
             onKeyDown={handleKeyDown}
             onKeyUp={handleKeyUp}
             onSelect={handleSelectionChange}
+            onPaste={handlePaste}
             className="note-textarea"
             rows={isExpanded || editingNote ? 8 : 1}
           />
           {(isExpanded || editingNote) && (
             <div className="char-count">{charCount} characters</div>
           )}
-        </div>  
+        </div>
 
         {(isExpanded || editingNote) && (
           <div className="note-footer">
@@ -922,7 +785,7 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
                 type="button"
                 className={`tool-button ${isBoldActive ? 'active' : ''}`}
                 onClick={() => insertFormatting('bold')}
-                title="Bold"
+                title="Bold (Ctrl+B)"
               >
                 <span className="material-icons">format_bold</span>
               </button>
@@ -930,7 +793,7 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
                 type="button"
                 className={`tool-button ${isUnderlineActive ? 'active' : ''}`}
                 onClick={() => insertFormatting('underline')}
-                title="Underline"
+                title="Underline (Ctrl+U)"
               >
                 <span className="material-icons">format_underlined</span>
               </button>
@@ -938,7 +801,7 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
                 type="button"
                 className={`tool-button ${isStrikethroughActive ? 'active' : ''}`}
                 onClick={() => insertFormatting('strikethrough')}
-                title="Strikethrough"
+                title="Strikethrough (Ctrl+L)"
               >
                 <span className="material-icons">strikethrough_s</span>
               </button>
@@ -946,7 +809,7 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
                 type="button"
                 className={`tool-button ${listType === 'bullet' ? 'active' : ''}`}
                 onClick={() => toggleListType('bullet')}
-                title="Add bullet list"
+                title="Bullet List (Ctrl+P)"
               >
                 <span className="material-icons">format_list_bulleted</span>
               </button>
@@ -954,16 +817,15 @@ const CreateNote = ({ addNote, editingNote, onSave, onCancel }) => {
                 type="button"
                 className={`tool-button ${listType === 'number' ? 'active' : ''}`}
                 onClick={() => toggleListType('number')}
-                title="Add number list"
+                title="Number List (Ctrl+N)"
               >
                 <span className="material-icons">format_list_numbered</span>
               </button>
-
               <button
                 type="button"
-                className={`tool-button`}
+                className="tool-button"
                 onClick={() => insertFormatting('code')}
-                title="Code"
+                title="Code Block"
               >
                 <span className="material-icons">code</span>
               </button>

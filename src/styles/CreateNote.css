@@ -50,16 +50,32 @@
   max-height: 500px; /* Match container max-height */
   border: none;
   outline: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  padding: 12px;
+  line-height: 1.5;
+  tab-size: 3;
   font-family: var(--font-primary);
   background: transparent;
   color: var(--text-color);
   font-size: 1rem;
-  line-height: 1.6;
-  padding: 1.25rem 0.3rem;
+  padding-left: 0;
+  text-indent: 0;
+  position: relative;
+  /* padding: 1.25rem 0.3rem; */
   resize: none;
   transition: all 0.2s ease;
   overflow-y: auto; /* Enable vertical scrolling */
   overflow-x: hidden; /* Hide horizontal scrolling */
+}
+
+.note-textarea[data-has-list="true"] {
+  padding-left: 3ch; /* Adjust based on your indentation needs */
+}
+
+.note-content pre {
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 /* Modern scrollbar */
@@ -133,7 +149,37 @@
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
+  position: relative;
   justify-content: center;
+}
+
+/* Add this to your CreateNote.css */
+.bold-text {
+  font-weight: bold;
+}
+
+.underline-text {
+  text-decoration: underline;
+}
+
+.strikethrough-text {
+  text-decoration: line-through;
+}
+
+.tool-button:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  pointer-events: none;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background: #333;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
 }
 
 .tool-button:hover {

@@ -16,7 +16,7 @@ const Footer = () => {
             <p>
               Developed with <span className="heart">❤</span> by{' '}
               <a 
-                href="https://github.com/kushyanthpothineni" 
+                href="https://github.com/kushyanthpothi" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="developer-link"

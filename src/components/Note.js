@@ -1,7 +1,7 @@
 // src/components/Note.js
 import React from 'react';
 import '../styles/Note.css';
-import { auth } from '../firebase/firebase';
+// import { auth } from '../firebase/firebase';
 import { toast } from 'react-hot-toast';
 
 const Note = ({ note, onEdit, deleteNote, onPinNote, isOffline }) => {
@@ -33,11 +33,21 @@ const Note = ({ note, onEdit, deleteNote, onPinNote, isOffline }) => {
   const handleDelete = (e) => {
     e.stopPropagation();
     if (isOffline) {
-      const cachedNotes = JSON.parse(localStorage.getItem('cachedNotes') || '[]');
-      const updatedNotes = cachedNotes.filter(n => n.id !== note.id);
-      localStorage.setItem('cachedNotes', JSON.stringify(updatedNotes));
-      deleteNote(note.id);
-      toast.success('Note deleted from local storage');
+      try {
+        const cachedNotes = JSON.parse(localStorage.getItem('cachedNotes') || '[]');
+        const updatedNotes = cachedNotes.filter(n => n.id !== note.id);
+        localStorage.setItem('cachedNotes', JSON.stringify(updatedNotes));
+        deleteNote(note.id);
+        
+        window.dispatchEvent(new CustomEvent('notesUpdated', { 
+          detail: updatedNotes 
+        }));
+        
+        toast.success('Note deleted from local storage');
+      } catch (error) {
+        console.error('Error deleting note:', error);
+        toast.error('Failed to delete note');
+      }
     } else {
       deleteNote(note.id);
     }

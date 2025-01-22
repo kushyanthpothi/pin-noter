@@ -4,15 +4,15 @@ import { useAuth } from '../context/AuthContext';
 import Login from './Login';
 import Signup from './Signup';
 import '../styles/Header.css';
-import { auth, provider, db } from '../firebase/firebase';
-import { signOut, signInWithPopup } from 'firebase/auth';
-import { ref, get, update } from 'firebase/database';
+import { auth, db } from '../firebase/firebase';
+import { signOut } from 'firebase/auth';
+import { ref, get } from 'firebase/database';
 
 const Header = ({ onSearch }) => {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const { currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
+  // const [showAuthModal, setShowAuthModal] = useState(false);
   const [authType, setAuthType] = useState(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
@@ -47,27 +47,27 @@ const Header = ({ onSearch }) => {
     fetchUserData();
   }, [currentUser]);
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+  // const handleGoogleSignIn = async () => {
+  //   try {
+  //     const result = await signInWithPopup(auth, provider);
+  //     const user = result.user;
       
-      const userRef = ref(db, `users/${user.uid}`);
-      await update(userRef, {
-        email: user.email,
-        photoURL: user.photoURL,
-        fullName: user.displayName || 'User',
-        lastLogin: new Date().toISOString(),
-        provider: 'google'
-      });
+  //     const userRef = ref(db, `users/${user.uid}`);
+  //     await update(userRef, {
+  //       email: user.email,
+  //       photoURL: user.photoURL,
+  //       fullName: user.displayName || 'User',
+  //       lastLogin: new Date().toISOString(),
+  //       provider: 'google'
+  //     });
 
-      setShowAuthModal(false);
-    } catch (error) {
-      if (error.code !== 'auth/popup-closed-by-user') {
-        console.error('Google sign-in error:', error);
-      }
-    }
-  };
+  //     // setShowAuthModal(false);
+  //   } catch (error) {
+  //     if (error.code !== 'auth/popup-closed-by-user') {
+  //       console.error('Google sign-in error:', error);
+  //     }
+  //   }
+  // };
 
   const handleLogout = async () => {
     try {
