@@ -1,0 +1,119 @@
+/* src/components/Footer.css */
+.footer {
+    width: 100%;
+    padding: 1rem 0;
+    margin-top: auto;
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Theme Variables - Add these to your root CSS or App.css */
+:root {
+    /* Light theme */
+    --bg-primary: #ffffff;
+    --text-primary: #2d3748;
+    --text-secondary: #4a5568;
+    --border-color: #e2e8f0;
+    --link-color: #4f46e5;
+    --link-hover-color: #4338ca;
+    --heart-color: #e11d48;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+    --bg-primary: #1a1b23;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --border-color: #2d303e;
+    --link-color: #818cf8;
+    --link-hover-color: #6366f1;
+    --heart-color: #fb7185;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.footer-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.copyright {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.developer-info {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.developer-info p {
+    margin: 0;
+}
+
+.developer-link {
+    color: var(--link-color);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.developer-link:hover {
+    color: var(--link-hover-color);
+    text-decoration: underline;
+}
+
+.heart {
+    color: var(--heart-color);
+    display: inline-block;
+    animation: heartbeat 1.5s ease infinite;
+}
+
+@keyframes heartbeat {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .footer-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+
+    .footer {
+        padding: 0.75rem 0;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (forced-colors: active) {
+    .footer {
+        border-top: 1px solid CanvasText;
+    }
+    
+    .developer-link {
+        text-decoration: underline;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .heart {
+        animation: none;
+    }
+}

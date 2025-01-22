@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/Header';
 import CreateNote from './components/CreateNote';
+import Footer from './components/Footer';
 import NotesList from './components/NotesList';
 import { Toaster, toast } from 'react-hot-toast';
 import { auth, database } from './firebase/firebase';
@@ -200,6 +201,9 @@ function App() {
               </>
             )}
           </main>
+          <Footer />git remote add origin https://github.com/kushyanthpothi/pin-noter.git
+git branch -M main
+git push -u origin main
         </div>
       </ThemeProvider>
     </AuthProvider>
