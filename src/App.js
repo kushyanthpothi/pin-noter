@@ -174,9 +174,29 @@ function App() {
           
           <Header onSearch={handleSearch} />
           <main className="main-content">
-            {loading ? (
-              <div className="loading">Loading notes...</div>
-            ) : (
+          {loading ? (
+            <div className="app-loading">
+              <div className="app-loading-content">
+                <div className="app-loading-logo">
+                  <span className="material-icons logo-icon">push_pin</span>
+                  <h1>Pin Noter</h1>
+                </div>
+                <div className="loading-animation">
+                  <div className="loading-spinner">
+                    <div className="spinner-ring"></div>
+                    <div className="spinner-ring"></div>
+                    <div className="spinner-ring"></div>
+                  </div>
+                  <div className="loading-text">
+                    <span>Loading your notes</span>
+                    <div className="loading-dots">
+                      <span>.</span><span>.</span><span>.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
               <>
                 {editingNote ? (
                   <CreateNote
