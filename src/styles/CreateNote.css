@@ -1,0 +1,273 @@
+/* Modern Text Editor Styles */
+.create-note {
+  max-width: 900px;
+  width: 90%;
+  margin: 2rem auto;
+  background: var(--note-bg);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--note-border);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.create-note.expanded {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.note-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--note-border);
+  background: var(--note-header-bg, rgba(0, 0, 0, 0.02));
+}
+
+.note-title {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1.35rem;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text-color);
+  padding: 0.5rem 0;
+  transition: all 0.2s ease;
+}
+
+.note-content {
+  position: relative;
+  background: var(--note-content-bg, transparent);
+  min-height: 150px;
+  /* Add max height for content area */
+  max-height: 400px;
+  overflow: hidden; /* Hide overflow initially */
+}
+
+.note-textarea {
+  width: 100%;
+  min-height: 40px;
+  max-height: 500px; /* Match container max-height */
+  border: none;
+  outline: none;
+  font-family: var(--font-primary);
+  background: transparent;
+  color: var(--text-color);
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 1.25rem 0.3rem;
+  resize: none;
+  transition: all 0.2s ease;
+  overflow-y: auto; /* Enable vertical scrolling */
+  overflow-x: hidden; /* Hide horizontal scrolling */
+}
+
+/* Modern scrollbar */
+.note-textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+
+
+.note-textarea::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.note-textarea::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 6px;
+}
+
+.note-textarea::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb, rgba(0, 0, 0, 0.2));
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.note-textarea::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover, rgba(0, 0, 0, 0.3));
+}
+
+[data-theme="dark"] .note-textarea::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .note-textarea::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+.create-note.expanded .note-content {
+  overflow: visible; /* Show overflow when expanded */
+}
+
+.create-note.expanded .note-textarea {
+  overflow-y: auto; /* Enable scrolling when expanded */
+}
+
+
+.note-footer {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--note-border);
+  background: var(--note-footer-bg, rgba(0, 0, 0, 0.02));
+}
+
+.note-tools {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.tool-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  color: var(--text-color);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-button:hover {
+  opacity: 1;
+  background-color: var(--button-hover-bg, rgba(0, 0, 0, 0.06));
+  transform: translateY(-1px);
+}
+
+.tool-button.active {
+  background-color: var(--button-active-bg, rgba(0, 0, 0, 0.08));
+  opacity: 1;
+}
+
+.note-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.cancel-button {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--note-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover {
+  background: var(--button-hover-bg, rgba(0, 0, 0, 0.06));
+  transform: translateY(-1px);
+}
+
+.char-count{
+  margin-top: 10%;
+}
+
+.save-button {
+  padding: 0.4rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color, #0066ff);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.save-button:hover {
+  background: var(--primary-color-hover, #0052cc);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.2);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] {
+  --note-header-bg: rgba(255, 255, 255, 0.02);
+  --note-footer-bg: rgba(255, 255, 255, 0.02);
+  --button-hover-bg: rgba(255, 255, 255, 0.08);
+  --button-active-bg: rgba(255, 255, 255, 0.12);
+}
+
+/* Formatting styles */
+.note-textarea [data-bold="true"] {
+  font-weight: 600;
+}
+
+.note-textarea [data-underline="true"] {
+  text-decoration: underline;
+}
+
+.note-textarea [data-code="true"] {
+  font-family: 'Fira Code', monospace;
+  background: var(--code-bg, rgba(0, 0, 0, 0.04));
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .create-note {
+    width: 95%;
+    margin: 1rem auto;
+  }
+
+  .note-tools {
+    gap: 0.5rem;
+  }
+
+  .note-content {
+    max-height: 400px; /* Slightly smaller on mobile */
+  }
+  
+  .note-textarea {
+    max-height: 400px;
+  }
+  
+  .tool-button {
+    padding: 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .note-footer {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .note-tools {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .note-content {
+    max-height: 300px; /* Even smaller on very small screens */
+  }
+  
+  .note-textarea {
+    max-height: 300px;
+  }
+
+  .note-actions {
+    width: 100%;
+  }
+
+  .save-button, .cancel-button {
+    flex: 1;
+    justify-content: center;
+  }
+}

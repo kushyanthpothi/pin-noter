@@ -1,0 +1,220 @@
+/* src/styles/Note.css */
+.note {
+  background-color: var(--note-bg);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-primary);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  border: 1px solid var(--note-border);
+  overflow: hidden;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Add to your Note.css */
+.offline-indicator {
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-left: 8px;
+}
+
+.offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--warning-bg, rgba(255, 193, 7, 0.1));
+  color: var(--warning-color, #856404);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.offline-banner .material-icons {
+  font-size: 20px;
+}
+
+.note.offline .pin-button {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.note.offline:hover .pin-button {
+  opacity: 0.5;
+}
+
+.note:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.note-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--note-border);
+}
+
+/* Add these new styles to the end of your Note.css */
+
+.pin-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  color: var(--text-color);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pin-button:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.pin-button.pinned {
+  opacity: 1;
+  color: var(--accent-color, #4285f4);
+  transform: rotate(45deg);
+}
+
+.pin-button .material-icons {
+  font-size: 20px;
+  transition: transform 0.3s ease;
+}
+
+.note.pinned {
+  border-color: var(--accent-color, #4285f4);
+  box-shadow: 0 4px 15px rgba(66, 133, 244, 0.15);
+}
+
+/* Dark mode adjustments for pin button */
+[data-theme="dark"] .pin-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .note.pinned {
+  border-color: var(--accent-color, #4285f4);
+  box-shadow: 0 4px 15px rgba(66, 133, 244, 0.1);
+}
+
+
+/* Add to Note.css */
+.note-content .preview span[style*="line-through"] {
+  text-decoration: line-through;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+/* Dark mode adjustment */
+[data-theme="dark"] .note-content .preview span[style*="line-through"] {
+  opacity: 0.7;
+}
+
+.note-header h3 {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-weight: 700; /* Changed from 500/600 to 700 for bold */
+  font-size: 1.25rem;
+  letter-spacing: -0.3px;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.note-content {
+  padding: 1rem 1.5rem;
+  min-height: 144px; /* Set minimum height for 4 lines (4 * line-height) */
+  display: flex;
+  flex-direction: column;
+}
+
+.note-content .preview {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-family: var(--font-primary);
+  color: var(--text-color);
+  white-space: pre-wrap;
+  height: 96px; /* Fixed height for 4 lines (1.5 * 16px * 4) */
+  overflow: hidden;
+  position: relative;
+}
+
+/* Add fade effect at the bottom if content overflows */
+.note-content .preview::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(transparent, var(--note-bg));
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.note-footer {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--note-border);
+}
+
+.note-date {
+  font-size: 0.85rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  font-family: var(--font-primary);
+}
+
+.note-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  color: var(--text-color);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .action-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .note-content .preview::after {
+  background: linear-gradient(transparent, var(--note-bg));
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .note-header,
+  .note-content,
+  .note-footer {
+    padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .note-header h3 {
+    font-size: 1.1rem;
+  }
+
+  .note-content .preview {
+    font-size: 0.95rem;
+  }
+}

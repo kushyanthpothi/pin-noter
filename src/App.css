@@ -1,0 +1,87 @@
+/* src/App.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+:root {
+  /* Your existing CSS variables */
+  --font-primary: 'Noto Sans', sans-serif;
+}
+
+
+:root[data-theme="light"] {
+  --bg-color: #ffffff;
+  --text-color: #202124;
+  --note-bg: #fff;
+  --note-border: #e0e0e0;
+  --header-bg: #fff;
+}
+
+:root[data-theme="dark"] {
+  --bg-color: #202124;
+  --text-color: #ffffff;
+  --note-bg: #202124;
+  --note-border: #5f6368;
+  --header-bg: #202124;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-primary);
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.text-regular {
+  font-weight: 400;
+}
+
+.text-medium {
+  font-weight: 500;
+}
+
+.text-semibold {
+  font-weight: 600;
+}
+
+.text-bold {
+  font-weight: 700;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.main-content {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .main-content {
+    max-width: 1100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 0.75rem 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.5rem 0;
+  }
+}

@@ -1,0 +1,129 @@
+/* src/styles/EditNote.css */
+.edit-note-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .edit-note-modal {
+    background-color: var(--note-bg);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+  }
+  
+  .edit-note-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--note-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .edit-note-title {
+    flex-grow: 1;
+    margin-right: 1rem;
+    font-size: 1.25rem;
+    font-weight: 500;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-color);
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+  }
+  
+  .close-button:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .edit-note-content {
+    padding: 1rem 1.5rem;
+    max-height: calc(90vh - 140px);
+    overflow-y: auto;
+  }
+  
+  .edit-note-textarea {
+    width: 100%;
+    min-height: 300px;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 1rem;
+    line-height: 1.5;
+    font-family: inherit;
+  }
+  
+  .edit-note-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--note-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .tool-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+  }
+  
+  .tool-button:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .tool-button.active {
+    background-color: rgba(0, 0, 0, 0.1);
+    opacity: 1;
+  }
+  
+  /* Dark mode adjustments */
+  [data-theme="dark"] .close-button:hover,
+  [data-theme="dark"] .tool-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  [data-theme="dark"] .tool-button.active {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .edit-note-modal {
+      width: 95%;
+    }
+  
+    .edit-note-header,
+    .edit-note-content,
+    .edit-note-footer {
+      padding: 0.75rem 1rem;
+    }
+  }
