@@ -18,6 +18,7 @@ const Header = ({ onSearch }) => {
   const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
   const [userProfileData, setUserProfileData] = useState(null);
   const isMobile = window.innerWidth <= 768;
+  const defaultTheme = 'system';
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -99,6 +100,14 @@ const Header = ({ onSearch }) => {
     return <Signup onClose={() => setAuthType(null)} />;
   }
 
+  const handleThemeChange = () => {
+    // Cycle through: system -> light -> dark -> system
+    const themeOrder = ['system', 'light', 'dark'];
+    const currentIndex = themeOrder.indexOf(theme);
+    const nextTheme = themeOrder[(currentIndex + 1) % themeOrder.length];
+    toggleTheme(nextTheme);
+  };
+
   return (
     <header className="header">
       <div className="header-left">
@@ -138,16 +147,14 @@ const Header = ({ onSearch }) => {
       )}
 
       <div className="header-right">
-        <button
+      <button
           className="theme-button"
-          onClick={() => {
-            const nextTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
-            toggleTheme(nextTheme);
-          }}
+          onClick={handleThemeChange}
           aria-label={`Current theme: ${theme} mode`}
+          title={`Current theme: ${theme} mode. Click to switch.`}
         >
           <span className="material-icons">
-            {theme === 'light' ? 'light_mode' : theme === 'dark' ? 'dark_mode' : 'computer'}
+            {theme === 'system' ? 'computer' : theme === 'light' ? 'light_mode' : 'dark_mode'}
           </span>
         </button>
 
